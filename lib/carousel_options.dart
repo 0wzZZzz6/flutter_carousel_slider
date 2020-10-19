@@ -110,6 +110,9 @@ class CarouselOptions {
   /// Whether or not to disable the `Center` widget for each slide.
   final bool disableCenter;
 
+  /// function for center item tap
+  final Function(int index) onCenterTap;
+
   CarouselOptions({
     this.height,
     this.aspectRatio: 16 / 9,
@@ -132,6 +135,7 @@ class CarouselOptions {
     this.pageViewKey,
     this.enlargeStrategy: CenterPageEnlargeStrategy.scale,
     this.disableCenter: false,
+    this.onCenterTap,
     carouselController,
   });
 }

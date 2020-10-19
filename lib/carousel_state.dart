@@ -22,6 +22,8 @@ class CarouselState {
   ///
   int initialPage = 0;
 
+  int centerIndex = 0;
+
   /// The widgets count that should be shown at carousel
   int itemCount;
 
