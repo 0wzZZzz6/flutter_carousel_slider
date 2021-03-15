@@ -366,7 +366,7 @@ class OnDemandCarouselDemo extends StatelessWidget {
           enlargeCenterPage: true,
           autoPlay: true,
         ),
-        itemBuilder: (ctx, index) {
+        itemBuilder: (ctx, index, realIdx) {
           return Container(
             child: Text(index.toString()),
           );
@@ -465,7 +465,7 @@ class _PrefetchImageDemoState extends State<PrefetchImageDemo> {
           aspectRatio: 2.0,
           enlargeCenterPage: true,
         ),
-        itemBuilder: (context, index) {
+        itemBuilder: (context, index, realIdx) {
           return Container(
             child: Center(
                 child: Image.network(images[index],
@@ -594,7 +594,7 @@ class MultipleItemDemo extends StatelessWidget {
           viewportFraction: 1,
         ),
         itemCount: (imgList.length / 2).round(),
-        itemBuilder: (context, index) {
+        itemBuilder: (context, index, realIdx) {
           final int first = index * 2;
           final int second = first + 1;
           return Row(

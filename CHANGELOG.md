@@ -1,3 +1,50 @@
+# 3.0.0
+
+## Add
+
+- Add third argument in `itemBuilder`, allow Hero and infinite scroll to coexist
+
+## Breaking change
+
+- `itemBuilder` needs to accept three arguments, instead of two.
+
+# 2.3.4
+
+## Fix
+
+- Rollback PR #222, due to it will break the existing project.
+
+# 2.3.3
+
+- Fix code formatting
+
+# 2.3.2
+
+## Fix
+
+- Double pointer down and up will cause a exception
+- Fix `CarouselPageChangedReason`
+
+## Add
+
+- Allow Hero and infinite scroll to coexist
+
+# 2.3.1
+
+- Fix code formatting
+
+# 2.3.0
+
+## Fix
+
+- Fixed unresponsiveness to state changes
+
+## Add
+
+- Added start/stop autoplay functionality
+- Pause auto play if not current route
+- Add `pageSnapping` option for disable page snapping for the carousel
+
 # 2.2.1
 
 ## Fix

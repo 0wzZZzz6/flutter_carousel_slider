@@ -14,6 +14,9 @@ import 'utils.dart';
 export 'carousel_controller.dart';
 export 'carousel_options.dart';
 
+typedef Widget ExtendedIndexedWidgetBuilder(
+    BuildContext context, int index, int realIndex);
+
 class CarouselSlider extends StatefulWidget {
   /// [CarouselOptions] to create a [CarouselState] with
   ///
@@ -24,7 +27,9 @@ class CarouselSlider extends StatefulWidget {
   final List<Widget> items;
 
   /// The widget item builder that will be used to build item on demand
-  final IndexedWidgetBuilder itemBuilder;
+  /// The third argument is the PageView's real index, can be used to cooperate
+  /// with Hero.
+  final ExtendedIndexedWidgetBuilder itemBuilder;
 
   /// A [MapController], used to control the map.
   final CarouselControllerImpl _carouselController;
@@ -65,6 +70,8 @@ class CarouselSliderState extends State<CarouselSlider>
 
   CarouselState carouselState;
 
+  PageController pageController;
+
   /// mode is related to why the page is being changed
   CarouselPageChangedReason mode = CarouselPageChangedReason.controller;
 
@@ -78,6 +85,17 @@ class CarouselSliderState extends State<CarouselSlider>
   void didUpdateWidget(CarouselSlider oldWidget) {
     carouselState.options = options;
     carouselState.itemCount = widget.itemCount;
+
+    // pageController needs to be re-initialized to respond to state changes
+    pageController = PageController(
+      viewportFraction: options.viewportFraction,
+      initialPage: carouselState.realPage,
+    );
+    carouselState.pageController = pageController;
+
+    // handle autoplay when state changes
+    handleAutoPlay();
+
     super.didUpdateWidget(oldWidget);
   }
 
@@ -93,9 +111,9 @@ class CarouselSliderState extends State<CarouselSlider>
     carouselState.realPage = options.enableInfiniteScroll
         ? carouselState.realPage + carouselState.initialPage
         : carouselState.initialPage;
-    timer = getTimer();
+    handleAutoPlay();
 
-    PageController pageController = PageController(
+    pageController = PageController(
       viewportFraction: options.viewportFraction,
       initialPage: carouselState.realPage,
     );
@@ -106,6 +124,11 @@ class CarouselSliderState extends State<CarouselSlider>
   Timer getTimer() {
     return widget.options.autoPlay
         ? Timer.periodic(widget.options.autoPlayInterval, (_) {
+            final route = ModalRoute.of(context);
+            if (route?.isCurrent == false) {
+              return;
+            }
+
             CarouselPageChangedReason previousReason = mode;
             changeMode(CarouselPageChangedReason.timed);
             int nextPage = carouselState.pageController.page.round() + 1;
@@ -130,14 +153,26 @@ class CarouselSliderState extends State<CarouselSlider>
   }
 
   void clearTimer() {
-    if (widget.options.autoPlay) {
+    if (timer != null) {
       timer?.cancel();
+      timer = null;
     }
   }
 
   void resumeTimer() {
-    if (widget.options.autoPlay) {
+    if (timer == null) {
       timer = getTimer();
+    }
+  }
+
+  void handleAutoPlay() {
+    bool autoPlayEnabled = widget.options.autoPlay;
+
+    if (autoPlayEnabled && timer != null) return;
+
+    clearTimer();
+    if (autoPlayEnabled) {
+      resumeTimer();
     }
   }
 
@@ -247,6 +282,7 @@ class CarouselSliderState extends State<CarouselSlider>
     return getGestureWrapper(PageView.builder(
       physics: widget.options.scrollPhysics,
       scrollDirection: widget.options.scrollDirection,
+      pageSnapping: widget.options.pageSnapping,
       controller: carouselState.pageController,
       reverse: widget.options.reverse,
       itemCount: widget.options.enableInfiniteScroll ? null : widget.itemCount,
@@ -269,7 +305,7 @@ class CarouselSliderState extends State<CarouselSlider>
           animation: carouselState.pageController,
           child: (widget.items != null)
               ? (widget.items.length > 0 ? widget.items[index] : Container())
-              : widget.itemBuilder(context, index),
+              : widget.itemBuilder(context, index, idx),
           builder: (BuildContext context, child) {
             double distortionValue = 1.0;
             // if `enlargeCenterPage` is true, we must calculate the carousel item's height
@@ -279,10 +315,9 @@ class CarouselSliderState extends State<CarouselSlider>
               double itemOffset;
               // pageController.page can only be accessed after the first build,
               // so in the first build we calculate the itemoffset manually
-              if (carouselState.pageController.position.minScrollExtent ==
-                      null ||
-                  carouselState.pageController.position.maxScrollExtent ==
-                      null) {
+              try {
+                itemOffset = carouselState.pageController.page - idx;
+              } catch (e) {
                 BuildContext storageContext = carouselState
                     .pageController.position.context.storageContext;
                 final double previousSavedPosition =
@@ -294,8 +329,6 @@ class CarouselSliderState extends State<CarouselSlider>
                   itemOffset =
                       carouselState.realPage.toDouble() - idx.toDouble();
                 }
-              } else {
-                itemOffset = carouselState.pageController.page - idx;
               }
               final distortionRatio =
                   (1 - (itemOffset.abs() * 0.3)).clamp(0.0, 1.0);
@@ -326,9 +359,4 @@ class CarouselSliderState extends State<CarouselSlider>
   }
 }
 
-class _MultipleGestureRecognizer extends PanGestureRecognizer {
-  @override
-  void rejectGesture(int pointer) {
-    acceptGesture(pointer);
-  }
-}
+class _MultipleGestureRecognizer extends PanGestureRecognizer {}
